@@ -1,0 +1,10 @@
+target/
+dist/
+archive/
+GuessMarket-Ex3-submission/
+*.zip
+README.html
+.DS_Store
+*.iml
+.idea/
+*.class
