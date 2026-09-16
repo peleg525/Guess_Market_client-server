@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>gm</groupId>
+        <artifactId>guess-market-ex3</artifactId>
+        <version>3.0</version>
+    </parent>
+
+    <artifactId>gm-server</artifactId>
+    <packaging>war</packaging>
+
+    <!--
+        Targets Tomcat 10.1+ (Jakarta EE 10, the jakarta.servlet.* namespace) - see the README for
+        why. The servlet API is "provided" (Tomcat supplies it at runtime); everything else
+        (gm-engine, Gson) is bundled into WEB-INF/lib by the war plugin, since the grader's Tomcat
+        installation cannot be assumed to have anything beyond the servlet container itself.
+    -->
+    <dependencies>
+        <dependency>
+            <groupId>gm</groupId>
+            <artifactId>gm-engine</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>${gson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <version>6.0.0</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>gm-server</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.4.0</version>
+                <configuration>
+                    <failOnMissingWebXml>false</failOnMissingWebXml>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
