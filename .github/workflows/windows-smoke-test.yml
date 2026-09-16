@@ -1,0 +1,71 @@
+name: Windows smoke test
+
+on:
+  push:
+  workflow_dispatch: {}
+
+jobs:
+  windows-smoke-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Run engine unit tests (file upload/validation, login/deposit/chat, LMSR appendix example, order-book simulation replay)
+        run: mvn -B -pl gm-engine -am test
+
+      - name: Build with Maven (WAR + Windows-native JavaFX client)
+        run: mvn -B clean package
+
+      - name: Assemble distribution folder (mirrors the submission zip layout)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist\client\lib | Out-Null
+          Copy-Item gm-server\target\gm-server.war dist\gm-server.war
+          Copy-Item gm-client\target\gm-client.jar dist\client\gm-client.jar
+          Copy-Item gm-client\target\lib\* dist\client\lib\
+          Copy-Item gm-client\run.bat dist\client\run.bat
+
+      - name: Smoke test - the packaged client launches on Windows without crashing
+        shell: pwsh
+        run: |
+          $proc = Start-Process -FilePath "java" -ArgumentList "-jar", "dist\client\gm-client.jar" `
+            -RedirectStandardOutput "app-out.txt" -RedirectStandardError "app-err.txt" -PassThru
+          Start-Sleep -Seconds 8
+          $stillRunning = -not $proc.HasExited
+          if (-not $stillRunning) {
+            Get-Content app-err.txt
+            throw "Application exited within 8 seconds of starting (exit code $($proc.ExitCode))"
+          }
+          Stop-Process -Id $proc.Id -Force
+          Start-Sleep -Seconds 1
+          $err = Get-Content app-err.txt -Raw
+          Write-Host $err
+          if ($err -match "Exception in thread" -or $err -match "Error: Missing JavaFX runtime") {
+            throw "Application logged an error while starting"
+          }
+
+      - name: Download and start Tomcat, deploy the WAR
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://dlcdn.apache.org/tomcat/tomcat-10/v10.1.60/bin/apache-tomcat-10.1.60.zip" -OutFile tomcat.zip
+          Expand-Archive tomcat.zip -DestinationPath .
+          Copy-Item dist\gm-server.war "apache-tomcat-10.1.60\webapps\gm-server.war"
+          Start-Process -FilePath "apache-tomcat-10.1.60\bin\startup.bat"
+          Start-Sleep -Seconds 20
+
+      - name: Smoke test - the deployed server answers a real HTTP request
+        shell: pwsh
+        run: |
+          $response = Invoke-WebRequest -Uri "http://localhost:8080/gm-server/api/events" -UseBasicParsing
+          if ($response.StatusCode -ne 200) {
+            throw "Server did not respond with 200 OK (got $($response.StatusCode))"
+          }
+          if ($response.Content -ne "[]") {
+            throw "Expected an empty JSON list on a freshly deployed server, got: $($response.Content)"
+          }
