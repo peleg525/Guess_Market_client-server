@@ -1,0 +1,54 @@
+.root {
+    -fx-base: #20242c;
+    -fx-background-color: #20242c;
+    -fx-font-family: "Consolas", monospace;
+    -fx-font-size: 12px;
+}
+
+.label {
+    -fx-text-fill: #e5e8f0;
+}
+
+.button {
+    -fx-background-color: #4f5b73;
+    -fx-text-fill: #f5f6fa;
+    -fx-background-radius: 2;
+    -fx-font-weight: normal;
+}
+
+.button:hover {
+    -fx-background-color: #6a7690;
+}
+
+.toolbar-bar {
+    -fx-background-color: #171a20;
+    -fx-padding: 8;
+}
+
+.nav-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #e5e8f0;
+    -fx-font-weight: normal;
+}
+
+.nav-button:selected {
+    -fx-background-color: #4f5b73;
+    -fx-text-fill: white;
+}
+
+.table-view {
+    -fx-background-color: #2b3038;
+    -fx-control-inner-background: #2b3038;
+    -fx-text-fill: #e5e8f0;
+}
+
+.table-view .table-cell {
+    -fx-text-fill: #e5e8f0;
+}
+
+.detail-pane {
+    -fx-background-color: #2b3038;
+    -fx-border-color: #444b58;
+    -fx-border-width: 1;
+    -fx-padding: 12;
+}

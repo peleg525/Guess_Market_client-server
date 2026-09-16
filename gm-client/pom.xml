@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>gm</groupId>
+        <artifactId>guess-market-ex3</artifactId>
+        <version>3.0</version>
+    </parent>
+
+    <artifactId>gm-client</artifactId>
+    <packaging>jar</packaging>
+
+    <!--
+        JavaFX ships native code per operating system, so the artifacts below need a classifier.
+        The grader runs on Windows 10 (per the assignment's testing rules), so "win" is the
+        default used for `mvn package` and for the submission's lib/ folder. To run/test locally
+        on this Mac instead, build with: mvn -Pmac-dev javafx:run
+    -->
+    <properties>
+        <javafx.classifier>win</javafx.classifier>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>gm</groupId>
+            <artifactId>gm-engine</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>${gson.version}</version>
+        </dependency>
+        <!--
+            org.openjfx's published POMs resolve their OWN transitive javafx-* dependencies using
+            THIS build machine's OS (they need the os-maven-plugin extension to do that properly,
+            which this project intentionally doesn't use since the classifier is pinned explicitly
+            below) - without excluding those transitive deps entirely, the build silently pulls in
+            an extra copy of every module for the wrong platform too. All three modules are already
+            declared explicitly below with the right classifier, so cutting the transitive ones is safe.
+        -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>${javafx.classifier}</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-graphics</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>${javafx.classifier}</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-base</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>${javafx.classifier}</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>gm-client</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.1</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>gm.ui.Main</mainClass>
+                            <addClasspath>true</addClasspath>
+                            <classpathLayoutType>simple</classpathLayoutType>
+                            <classpathPrefix>lib/</classpathPrefix>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.7.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                            <includeScope>runtime</includeScope>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>0.0.8</version>
+                <configuration>
+                    <mainClass>gm.ui.Main</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>mac-dev</id>
+            <properties>
+                <javafx.classifier>mac-aarch64</javafx.classifier>
+            </properties>
+        </profile>
+    </profiles>
+</project>

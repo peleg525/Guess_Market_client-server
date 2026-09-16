@@ -1,0 +1,121 @@
+.root {
+    -fx-base: #ffffff;
+    -fx-background-color: #eef1f6;
+    -fx-accent: #2f5fe0;
+    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-font-size: 12px;
+}
+
+.label {
+    -fx-text-fill: #16213a;
+}
+
+.button {
+    -fx-background-color: #2f5fe0;
+    -fx-text-fill: white;
+    -fx-background-radius: 4;
+    -fx-font-weight: bold;
+    -fx-padding: 6 14 6 14;
+}
+
+.button:hover {
+    -fx-background-color: #23439e;
+}
+
+.button:disabled {
+    -fx-opacity: 0.5;
+}
+
+.toolbar-bar {
+    -fx-background-color: #ccd8f2;
+    -fx-padding: 8;
+    -fx-border-color: transparent transparent #b9c2d6 transparent;
+}
+
+.nav-button {
+    -fx-background-color: #dbe2f0;
+    -fx-text-fill: #16213a;
+    -fx-font-weight: bold;
+    -fx-background-radius: 0;
+    -fx-padding: 8 20 8 20;
+}
+
+.nav-button:selected {
+    -fx-background-color: #2f5fe0;
+    -fx-text-fill: white;
+}
+
+.check-box {
+    -fx-text-fill: #16213a;
+}
+
+.combo-box {
+    -fx-background-color: white;
+    -fx-border-color: #b9c2d6;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+}
+
+.text-field {
+    -fx-background-color: white;
+    -fx-border-color: #b9c2d6;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+}
+
+.table-view {
+    -fx-background-color: white;
+    -fx-border-color: #ccd4e3;
+    -fx-border-width: 1;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #dbe2f0;
+}
+
+.table-view .column-header, .table-view .filler {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent #ccd4e3 transparent transparent;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: #16213a;
+    -fx-font-weight: bold;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: #f5f7fb;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: #cddafb;
+}
+
+.table-row-cell:selected .text {
+    -fx-fill: #16213a;
+}
+
+.split-pane {
+    -fx-background-color: #eef1f6;
+}
+
+.split-pane-divider {
+    -fx-background-color: #ccd4e3;
+}
+
+.scroll-pane, .scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+.detail-pane {
+    -fx-background-color: white;
+    -fx-border-color: #ccd4e3;
+    -fx-border-width: 1;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-padding: 14;
+}
+
+.separator .line {
+    -fx-border-color: #4a5776;
+}

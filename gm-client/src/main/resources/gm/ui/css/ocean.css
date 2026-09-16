@@ -1,0 +1,48 @@
+.root {
+    -fx-base: #e6f4f9;
+    -fx-background-color: #e6f4f9;
+    -fx-font-family: "Georgia", serif;
+    -fx-font-size: 13px;
+}
+
+.label {
+    -fx-text-fill: #0b3654;
+}
+
+.button {
+    -fx-background-color: #0a7ea4;
+    -fx-text-fill: white;
+    -fx-background-radius: 12;
+    -fx-font-weight: bold;
+}
+
+.button:hover {
+    -fx-background-color: #075a76;
+}
+
+.toolbar-bar {
+    -fx-background-color: #b7e2ef;
+    -fx-padding: 8;
+}
+
+.nav-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #0b3654;
+    -fx-font-weight: normal;
+}
+
+.nav-button:selected {
+    -fx-background-color: #0a7ea4;
+    -fx-text-fill: white;
+}
+
+.table-view {
+    -fx-background-color: #f3fbfd;
+}
+
+.detail-pane {
+    -fx-background-color: #f3fbfd;
+    -fx-border-color: #9fd4e6;
+    -fx-border-width: 1;
+    -fx-padding: 12;
+}
