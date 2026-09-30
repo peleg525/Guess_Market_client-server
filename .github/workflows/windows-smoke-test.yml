@@ -59,7 +59,10 @@ jobs:
           # catalina.bat run (foreground) instead of startup.bat: startup.bat spawns Tomcat in a
           # separate console window via the Windows "start" command, which is flaky in a headless
           # CI session. "run" stays attached to this process instead, so -NoNewWindow works.
-          Start-Process -FilePath "apache-tomcat-10.1.60\bin\catalina.bat" -ArgumentList "run" -NoNewWindow `
+          # CATALINA_HOME is set explicitly as an absolute path: catalina.bat's own self-detection
+          # (relative to its own %~dp0) doesn't resolve correctly when launched this way.
+          $env:CATALINA_HOME = (Resolve-Path "apache-tomcat-10.1.60").Path
+          Start-Process -FilePath "$env:CATALINA_HOME\bin\catalina.bat" -ArgumentList "run" -NoNewWindow `
             -RedirectStandardOutput "tomcat-out.txt" -RedirectStandardError "tomcat-err.txt"
 
       - name: Smoke test - the deployed server answers a real HTTP request
