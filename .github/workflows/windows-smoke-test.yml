@@ -70,16 +70,21 @@ jobs:
         run: |
           $deadline = (Get-Date).AddSeconds(60)
           $response = $null
+          $lastError = $null
           do {
             Start-Sleep -Seconds 2
             try {
-              $response = Invoke-WebRequest -Uri "http://localhost:8080/gm-server/api/events" -UseBasicParsing -TimeoutSec 3
+              # 127.0.0.1, not localhost: on this runner "localhost" can resolve to the IPv6
+              # loopback (::1) first, which misses a listener bound only to the IPv4 wildcard.
+              $response = Invoke-WebRequest -Uri "http://127.0.0.1:8080/gm-server/api/events" -UseBasicParsing -TimeoutSec 3
             } catch {
+              $lastError = $_.Exception.Message
               $response = $null
             }
           } while (-not $response -and (Get-Date) -lt $deadline)
 
           if (-not $response) {
+            Write-Host "Last connection error: $lastError"
             Write-Host "--- tomcat-out.txt ---"
             Get-Content tomcat-out.txt -ErrorAction SilentlyContinue
             Write-Host "--- tomcat-err.txt ---"
