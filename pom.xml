@@ -10,6 +10,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>gm-api</module>
         <module>gm-engine</module>
         <module>gm-server</module>
         <module>gm-client</module>

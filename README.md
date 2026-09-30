@@ -14,13 +14,18 @@ components - talks to it instead of calling the engine locally.
 
 ## Modules
 
-- **gm-engine** - the passive engine, still unaware of who's calling it. Loads/validates the
-  Exercise 3 XML format, tracks users (created purely through login), runs both trading methods,
-  and exposes everything through `GmEngine` using immutable DTOs.
+- **gm-api** - the client-server contract: the `GmEngine` interface, every DTO, the exceptions,
+  and the two enums that appear directly in DTO fields (`OrderSide`, `EventStatus`). No trading
+  logic, no XML, no JavaFX.
+- **gm-engine** - the passive engine, still unaware of who's calling it. Depends on `gm-api`,
+  implements `GmEngine`, loads/validates the Exercise 3 XML, tracks users (created purely through
+  login), and runs both trading methods.
 - **gm-server** - a WAR of plain `jakarta.servlet` classes wrapping a single shared `GmEngine`
   instance and translating HTTP/JSON to/from its calls.
 - **gm-client** - the JavaFX UI, built directly on Exercise 2's `gm-ui` screens/components, now
-  driven by an HTTP-backed `GmEngine` implementation instead of a local one.
+  driven by an HTTP-backed `GmEngine` implementation instead of a local one. Depends only on
+  `gm-api`, never on `gm-engine` itself - the client jar never needs `GmEngineImpl`, the XML
+  loader, or any trading-model class.
 
 ## Build
 
