@@ -1,5 +1,6 @@
 package gm.ui.screen;
 
+import gm.engine.dto.BalancePointDto;
 import gm.engine.dto.ParticipationSummaryDto;
 import gm.engine.dto.UserDetailDto;
 import gm.engine.dto.UserSummaryDto;
@@ -26,10 +27,10 @@ import java.util.List;
 
 /**
  * Users tab (labeled "Account" in the nav bar per the Exercise 3 UI sketch): a table of every
- * connected user plus a detail pane (balance, participations, balance history chart). Defaults to
- * showing the logged-in user's own account, which is also the only account with a "Load funds"
- * action - Exercise 3 dropped the XML-driven initial cash balance, so depositing is how a new
- * user's balance leaves zero (see the README for this design choice).
+ * connected user plus a detail pane. This screen is private to the logged-in user - selecting
+ * yourself shows the full picture (participations, every account-history row, the balance chart,
+ * the Load funds action); selecting anyone else shows only what the assignment allows other users
+ * to see about each other: name, balance, and whether they're a market maker.
  */
 public class UsersScreen {
 
@@ -39,10 +40,14 @@ public class UsersScreen {
 
     private final Label nameLabel = new Label("Select a user to see their details.");
     private final Label balanceLabel = new Label();
+    private final Label marketMakerLabel = new Label();
     private final TextField depositField = new TextField();
     private final Button depositButton = new Button("Load funds");
     private final HBox depositRow = new HBox(6, new Label("Add funds:"), depositField, depositButton);
+    private final Label participationsCaption = new Label("Participations:");
     private final TableView<ParticipationSummaryDto> participationsTable = new TableView<>();
+    private final Label accountHistoryCaption = new Label("Account history (most recent first):");
+    private final TableView<BalancePointDto> accountHistoryTable = new TableView<>();
     private final BalanceChart balanceChart = new BalanceChart();
     private final VBox detailBox = new VBox(10);
 
@@ -52,19 +57,19 @@ public class UsersScreen {
         this.context = context;
         buildTable();
         buildParticipationsTable();
+        buildAccountHistoryTable();
 
         depositField.setPromptText("Amount");
         depositField.setPrefWidth(100);
         depositButton.setOnAction(e -> depositFunds());
         depositField.setOnAction(e -> depositFunds());
-        depositRow.setVisible(false);
-        depositRow.setManaged(false);
 
         detailBox.setPadding(new Insets(10));
         detailBox.getStyleClass().add("detail-pane");
         nameLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-        detailBox.getChildren().addAll(nameLabel, balanceLabel, depositRow, new Label("Participations:"),
-                participationsTable, balanceChart);
+        detailBox.getChildren().addAll(nameLabel, balanceLabel, marketMakerLabel, depositRow, participationsCaption,
+                participationsTable, accountHistoryCaption, accountHistoryTable, balanceChart);
+        setPrivateSectionVisible(false);
 
         SplitPane split = new SplitPane(wrapScroll(table), wrapScroll(detailBox));
         split.setDividerPositions(0.42);
@@ -85,9 +90,8 @@ public class UsersScreen {
                             : (shownUsername == null ? context.actingUsername() : shownUsername);
                     users.stream().filter(u -> u.getName().equals(toReselect)).findFirst()
                             .ifPresent(u -> table.getSelectionModel().select(u));
-                    if (shownUsername != null && users.stream().anyMatch(u -> u.getName().equals(shownUsername))) {
-                        showUser(shownUsername);
-                    }
+                    users.stream().filter(u -> u.getName().equals(shownUsername)).findFirst()
+                            .ifPresent(this::showUser);
                 },
                 error -> { });
     }
@@ -106,7 +110,6 @@ public class UsersScreen {
                 (UserDetailDto detail) -> {
                     depositButton.setDisable(false);
                     depositField.clear();
-                    showUser(context.actingUsername());
                     refresh();
                 },
                 error -> {
@@ -115,24 +118,54 @@ public class UsersScreen {
                 });
     }
 
-    private void showUser(String username) {
-        shownUsername = username;
-        depositRow.setVisible(username.equals(context.actingUsername()));
-        depositRow.setManaged(username.equals(context.actingUsername()));
+    /**
+     * Only your own account is a "private screen" here (participations, every account-history
+     * row, the balance chart, Load funds) - selecting anyone else just shows what the assignment
+     * allows about other users: name, balance, market-maker flag. Uses the row already in hand
+     * ({@link UserSummaryDto}) for other users instead of an extra round trip for data we would
+     * not display anyway.
+     */
+    private void showUser(UserSummaryDto summary) {
+        shownUsername = summary.getName();
+        boolean isSelf = summary.getName().equals(context.actingUsername());
+        setPrivateSectionVisible(isSelf);
+
+        if (!isSelf) {
+            nameLabel.setText(summary.getName());
+            balanceLabel.setText("Balance: " + Money.format(summary.getBalance())
+                    + (summary.isBlocked() ? "  [BLOCKED]" : ""));
+            marketMakerLabel.setText("Market maker: " + (summary.isMarketMakerOfAnyEvent() ? "Yes" : "No"));
+            Animations.fadeIn(detailBox, context.animationsEnabled());
+            return;
+        }
+
         Async.call(
-                () -> context.engine().getUserDetail(username),
+                () -> context.engine().getUserDetail(summary.getName()),
                 (UserDetailDto detail) -> {
-                    nameLabel.setText(detail.getName() + (detail.getName().equals(context.actingUsername()) ? "  (you)" : "")
-                            + (detail.isBlocked() ? "  [BLOCKED]" : ""));
+                    nameLabel.setText(detail.getName() + "  (you)" + (detail.isBlocked() ? "  [BLOCKED]" : ""));
                     balanceLabel.setText("Balance: " + Money.format(detail.getBalance()));
+                    marketMakerLabel.setText("Market maker: " + (summary.isMarketMakerOfAnyEvent() ? "Yes" : "No"));
                     participationsTable.setItems(FXCollections.observableArrayList(detail.getParticipations()));
                     Animations.fadeIn(detailBox, context.animationsEnabled());
                 },
                 error -> { });
         Async.call(
-                () -> context.engine().getBalanceHistory(username),
-                balanceChart::render,
+                () -> context.engine().getBalanceHistory(summary.getName()),
+                (List<BalancePointDto> history) -> {
+                    balanceChart.render(history);
+                    List<BalancePointDto> newestFirst = new java.util.ArrayList<>(history);
+                    java.util.Collections.reverse(newestFirst);
+                    accountHistoryTable.setItems(FXCollections.observableArrayList(newestFirst));
+                },
                 error -> { });
+    }
+
+    private void setPrivateSectionVisible(boolean visible) {
+        for (javafx.scene.Node node : List.of(depositRow, participationsCaption, participationsTable,
+                accountHistoryCaption, accountHistoryTable, balanceChart)) {
+            node.setVisible(visible);
+            node.setManaged(visible);
+        }
     }
 
     private void buildTable() {
@@ -149,7 +182,7 @@ public class UsersScreen {
         table.getColumns().addAll(List.of(nameCol, balanceCol, mmCol, blockedCol));
         table.getSelectionModel().selectedItemProperty().addListener((obs, old, selected) -> {
             if (selected != null) {
-                showUser(selected.getName());
+                showUser(selected);
             }
         });
     }
@@ -175,6 +208,19 @@ public class UsersScreen {
             });
             return row;
         });
+    }
+
+    private void buildAccountHistoryTable() {
+        accountHistoryTable.setPrefHeight(160);
+        TableColumn<BalancePointDto, String> reasonCol = new TableColumn<>("Reason");
+        reasonCol.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getReason()));
+        reasonCol.setPrefWidth(220);
+        TableColumn<BalancePointDto, String> amountCol = new TableColumn<>("Amount");
+        amountCol.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(
+                (c.getValue().getDelta() >= 0 ? "+" : "") + Money.format(c.getValue().getDelta())));
+        TableColumn<BalancePointDto, String> balanceCol = new TableColumn<>("Balance after");
+        balanceCol.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(Money.format(c.getValue().getBalance())));
+        accountHistoryTable.getColumns().addAll(List.of(reasonCol, amountCol, balanceCol));
     }
 
     private ScrollPane wrapScroll(javafx.scene.Node node) {

@@ -135,7 +135,7 @@ public class GmEngineImpl implements GmEngine {
     public synchronized List<BalancePointDto> getBalanceHistory(String username) {
         User user = findUser(username);
         return user.getAccount().getHistory().stream()
-                .map(entry -> new BalancePointDto(entry.getSequence(), entry.getBalanceAfter(), entry.getReason()))
+                .map(entry -> new BalancePointDto(entry.getSequence(), entry.getDelta(), entry.getBalanceAfter(), entry.getReason()))
                 .collect(Collectors.toList());
     }
 
