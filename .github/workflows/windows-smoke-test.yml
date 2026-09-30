@@ -56,13 +56,33 @@ jobs:
           Invoke-WebRequest -Uri "https://dlcdn.apache.org/tomcat/tomcat-10/v10.1.60/bin/apache-tomcat-10.1.60.zip" -OutFile tomcat.zip
           Expand-Archive tomcat.zip -DestinationPath .
           Copy-Item dist\gm-server.war "apache-tomcat-10.1.60\webapps\gm-server.war"
-          Start-Process -FilePath "apache-tomcat-10.1.60\bin\startup.bat"
-          Start-Sleep -Seconds 20
+          # catalina.bat run (foreground) instead of startup.bat: startup.bat spawns Tomcat in a
+          # separate console window via the Windows "start" command, which is flaky in a headless
+          # CI session. "run" stays attached to this process instead, so -NoNewWindow works.
+          Start-Process -FilePath "apache-tomcat-10.1.60\bin\catalina.bat" -ArgumentList "run" -NoNewWindow `
+            -RedirectStandardOutput "tomcat-out.txt" -RedirectStandardError "tomcat-err.txt"
 
       - name: Smoke test - the deployed server answers a real HTTP request
         shell: pwsh
         run: |
-          $response = Invoke-WebRequest -Uri "http://localhost:8080/gm-server/api/events" -UseBasicParsing
+          $deadline = (Get-Date).AddSeconds(60)
+          $response = $null
+          do {
+            Start-Sleep -Seconds 2
+            try {
+              $response = Invoke-WebRequest -Uri "http://localhost:8080/gm-server/api/events" -UseBasicParsing -TimeoutSec 3
+            } catch {
+              $response = $null
+            }
+          } while (-not $response -and (Get-Date) -lt $deadline)
+
+          if (-not $response) {
+            Write-Host "--- tomcat-out.txt ---"
+            Get-Content tomcat-out.txt -ErrorAction SilentlyContinue
+            Write-Host "--- tomcat-err.txt ---"
+            Get-Content tomcat-err.txt -ErrorAction SilentlyContinue
+            throw "Server never became reachable within 60 seconds"
+          }
           if ($response.StatusCode -ne 200) {
             throw "Server did not respond with 200 OK (got $($response.StatusCode))"
           }
