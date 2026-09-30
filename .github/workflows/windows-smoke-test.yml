@@ -50,7 +50,7 @@ jobs:
             throw "Application logged an error while starting"
           }
 
-      - name: Download and start Tomcat, deploy the WAR
+      - name: Deploy the WAR to Tomcat and smoke test that it answers a real HTTP request
         shell: pwsh
         run: |
           Invoke-WebRequest -Uri "https://dlcdn.apache.org/tomcat/tomcat-10/v10.1.60/bin/apache-tomcat-10.1.60.zip" -OutFile tomcat.zip
@@ -61,13 +61,15 @@ jobs:
           # CI session. "run" stays attached to this process instead, so -NoNewWindow works.
           # CATALINA_HOME is set explicitly as an absolute path: catalina.bat's own self-detection
           # (relative to its own %~dp0) doesn't resolve correctly when launched this way.
+          # Starting Tomcat and polling it happen in this ONE step on purpose: GitHub's Windows
+          # runners kill every child process a step spawned (Job Object cleanup) the moment that
+          # step's shell exits, even ones started "detached" via Start-Process - Tomcat's own log
+          # showed it starting successfully, but it was already dead by the time a separate,
+          # later step tried to connect to it.
           $env:CATALINA_HOME = (Resolve-Path "apache-tomcat-10.1.60").Path
           Start-Process -FilePath "$env:CATALINA_HOME\bin\catalina.bat" -ArgumentList "run" -NoNewWindow `
             -RedirectStandardOutput "tomcat-out.txt" -RedirectStandardError "tomcat-err.txt"
 
-      - name: Smoke test - the deployed server answers a real HTTP request
-        shell: pwsh
-        run: |
           $deadline = (Get-Date).AddSeconds(60)
           $response = $null
           $lastError = $null
